@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { loadConfig } from "./config/env.js";
 import { GitHubClient } from "./github/client.js";
 import {
