@@ -1,8 +1,15 @@
 {
-  "name": "github-repo-prioritizer",
+  "name": "gh-repo-audit",
   "version": "1.0.0",
-  "private": true,
+  "description": "Audit and prioritize your personally owned GitHub repositories.",
   "type": "module",
+  "bin": {
+    "gh-repo-audit": "./dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },
