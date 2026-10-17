@@ -1,6 +1,6 @@
 {
   "name": "gh-repo-audit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Audit and prioritize your personally owned GitHub repositories.",
   "type": "module",
   "bin": {
