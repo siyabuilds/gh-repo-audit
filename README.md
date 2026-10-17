@@ -1,56 +1,114 @@
 # gh-repo-audit
 
-A small TypeScript CLI that retrieves every repository personally owned by the authenticated GitHub user, checks repository quality indicators, and returns a deterministic priority-ordered array.
+`gh-repo-audit` is a TypeScript CLI distributed through npm for auditing
+personally owned GitHub repositories and prioritizing them using repository
+quality indicators.
 
-## Usage
+See the package on npm: [gh-repo-audit](https://www.npmjs.com/package/gh-repo-audit).
 
-Node.js 20 or newer is required.
+You do not need to clone the source repository to use the published package.
 
-Set `GITHUB_TOKEN` as an environment variable or add it to a `.env` file in your current directory:
+## Installation and usage
+
+The simplest way to run the CLI is with `npx`:
+
+```sh
+npx gh-repo-audit
+```
+
+`npx` downloads and executes `gh-repo-audit` when necessary, so no source
+checkout or separate global installation is required.
+
+You can also install the CLI globally:
+
+```sh
+npm install -g gh-repo-audit
+gh-repo-audit
+```
+
+## Requirements and authentication
+
+- Node.js 20 or newer
+- A GitHub Personal Access Token supplied as `GITHUB_TOKEN`
+
+Provide the token in the environment:
+
+```sh
+export GITHUB_TOKEN=your-token-here
+npx gh-repo-audit
+```
+
+Alternatively, create a `.env` file in the directory from which you run the
+command:
 
 ```dotenv
 GITHUB_TOKEN=your-token-here
 STAR_THRESHOLD=5
 ```
 
-`STAR_THRESHOLD` is optional and defaults to `5`. Run the audit with:
+The CLI loads `.env` from the current working directory. The token must have
+access to the repositories you want to inspect, including any private
+repositories that should be included.
 
-```sh
-npx gh-repo-audit
+`STAR_THRESHOLD` is optional and defaults to `5`. When provided, it must be a
+non-negative integer. A repository meets the star indicator when its star
+count is greater than or equal to the threshold.
+
+Keep tokens out of source control. If `GITHUB_TOKEN` is missing, the CLI exits
+with an error. An invalid or unauthorized token is also reported as an error
+by the command.
+
+## What the tool does
+
+For the authenticated GitHub user, `gh-repo-audit`:
+
+1. Authenticates with GitHub using `GITHUB_TOKEN`.
+2. Retrieves repositories owned by that user, including accessible public and
+   private repositories.
+3. Checks each repository's star count against `STAR_THRESHOLD`.
+4. Checks whether a README exists using GitHub's README API endpoint.
+5. Checks whether the repository has a non-empty description.
+6. Assigns a quality score and priority.
+7. Sorts the analyses and writes them as formatted JSON.
+
+Only repositories personally owned by the authenticated user are included;
+repositories owned by organizations or other users are not included.
+
+## Priority classification and sorting
+
+Each repository has three binary indicators:
+
+- `meetsStarThreshold`
+- `hasReadme`
+- `hasDescription`
+
+The quality score is the number of indicators that are true:
+
+| Quality score | Priority | Meaning |
+| ---: | :--- | :--- |
+| 3 | P1 | High |
+| 2 | P2 | Medium |
+| 1 | P3 | Low |
+| 0 | P4 | Lowest |
+
+Results are sorted in this order:
+
+1. Priority (`P1` before `P2`, `P3`, and `P4`)
+2. Quality score, highest first
+3. Star count, highest first
+4. Most recently updated repository first
+5. `fullName`, alphabetically, as the final tie-breaker
+
+## Output
+
+The CLI writes formatted JSON to `data.json` in the directory from which you
+run it:
+
+```text
+./data.json
 ```
 
-Results are written as formatted JSON to `./data.json` in the current working directory. The token is never printed or included in returned repository objects. The token should have the access needed for the private repositories you want to inspect. A failed repository fetch, README check, analysis, or file write leaves the previous output file unchanged.
-
-`STAR_THRESHOLD` must be a non-negative integer when provided. A repository meets the high-stars indicator when its star count is greater than or equal to this threshold.
-
-## Classification and sorting
-
-Each repository has three independent binary indicators:
-
-1. `meetsStarThreshold`
-2. `hasReadme`, confirmed with the GitHub README API endpoint
-3. `hasDescription`, based on a non-empty About description
-
-The quality score is the number of satisfied indicators:
-
-| Score | Priority    |
-| ----: | :---------- |
-|     3 | P1 — High   |
-|     2 | P2 — Medium |
-|     1 | P3 — Low    |
-|     0 | P4 — Lowest |
-
-Results are sorted by priority, score, stars, most recent update, and finally alphabetical `fullName`. Sorting copies the input array rather than mutating it.
-
-## Tests
-
-```sh
-npm test
-```
-
-Tests mock GitHub responses and do not require a real token or network access.
-
-## Example output
+The output is an array of `RepositoryAnalysis` objects. For example:
 
 ```json
 [
@@ -75,4 +133,58 @@ Tests mock GitHub responses and do not require a real token or network access.
 ]
 ```
 
-If a README request fails for a reason other than a confirmed 404, the command fails with an incomplete-analysis error rather than misclassifying the repository.
+The token is not printed or included in repository results. If a README check
+fails for a reason other than a confirmed `404`, analysis stops with an error
+instead of treating the README as missing. GitHub request failures, invalid
+configuration, and output write failures are reported by the CLI and produce
+a non-zero process exit status.
+
+## Development
+
+Cloning the source repository is only needed if you want to contribute or run
+the project from source. After cloning it, install dependencies:
+
+```sh
+npm install
+```
+
+Build the TypeScript source:
+
+```sh
+npm run build
+```
+
+Run the test suite:
+
+```sh
+npm test
+```
+
+Tests mock GitHub responses and do not require a real token or network access.
+To run the CLI directly from TypeScript during development, configure
+`GITHUB_TOKEN` as described above and run:
+
+```sh
+npm run dev
+```
+
+After building, the compiled CLI can be run with:
+
+```sh
+npm start
+```
+
+## Troubleshooting and project links
+
+- **`GITHUB_TOKEN is missing`**: export `GITHUB_TOKEN` or add it to a `.env`
+  file in the current working directory.
+- **`STAR_THRESHOLD must be a non-negative integer`**: use a whole number such
+  as `0`, `5`, or `10`; decimal and negative values are rejected.
+- **`401 Unauthorized`**: verify that the token is valid and has the required
+  access.
+- **`403` or repeated GitHub request failures**: check token permissions and
+  GitHub API rate limits.
+- **Output write errors**: check that the current directory and destination
+  are writable.
+
+Package page: [https://www.npmjs.com/package/gh-repo-audit](https://www.npmjs.com/package/gh-repo-audit)
