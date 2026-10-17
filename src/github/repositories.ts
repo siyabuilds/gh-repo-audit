@@ -1,8 +1,7 @@
 import { classifyIndicators } from "../analysis/classify.js";
 import { sortAnalyses } from "../analysis/sort.js";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import type {
   GitHubRepository,
   RepositoryAnalysis,
@@ -21,9 +20,7 @@ export class ReadmeCheckError extends Error {
   }
 }
 
-export const defaultDataPath = fileURLToPath(
-  new URL("../../src/data.json", import.meta.url),
-);
+export const defaultDataPath = resolve(process.cwd(), "data.json");
 
 export async function listAccessibleRepositories(
   client: GitHubClient,
@@ -34,7 +31,9 @@ export async function listAccessibleRepositories(
     typeof authenticatedUser !== "object" ||
     typeof (authenticatedUser as { login?: unknown }).login !== "string"
   ) {
-    throw new Error("GitHub returned an unexpected authenticated user response.");
+    throw new Error(
+      "GitHub returned an unexpected authenticated user response.",
+    );
   }
   const login = (authenticatedUser as { login: string }).login.toLowerCase();
   const repositories: GitHubRepository[] = [];
@@ -137,7 +136,11 @@ export async function writeAnalysisResults(
 ): Promise<void> {
   try {
     await mkdir(dirname(outputPath), { recursive: true });
-    await writeFile(outputPath, `${JSON.stringify(analyses, null, 2)}\n`, "utf8");
+    await writeFile(
+      outputPath,
+      `${JSON.stringify(analyses, null, 2)}\n`,
+      "utf8",
+    );
   } catch (error) {
     throw new Error(
       `Could not write analysis results to ${outputPath}. Check that the destination is writable and that its parent directory exists. ${error instanceof Error ? error.message : String(error)}`,
