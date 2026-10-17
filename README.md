@@ -1,31 +1,27 @@
-# GitHub Repository Priority Analyzer
+# gh-repo-audit
 
 A small TypeScript CLI that retrieves every repository personally owned by the authenticated GitHub user, checks repository quality indicators, and returns a deterministic priority-ordered array.
 
-## Setup
+## Usage
 
-Requires Node.js 20 or newer.
+Node.js 20 or newer is required.
 
-```sh
-npm install
-cp .env.example .env
-# Edit .env and set GITHUB_TOKEN
-npm run build
-npm start
-```
-
-The token is read by `dotenv` and is never printed or included in returned repository objects. The token should have the access needed for the private repositories you want to inspect.
-
-After a successful run, the sorted analysis array is written as formatted JSON to `src/data.json`. The command prints only the number of personally owned repositories analyzed and the output location. A failed repository fetch, README check, analysis, or file write leaves the previous output file unchanged.
-
-## Configuration
+Set `GITHUB_TOKEN` as an environment variable or add it to a `.env` file in your current directory:
 
 ```dotenv
 GITHUB_TOKEN=your-token-here
 STAR_THRESHOLD=5
 ```
 
-`STAR_THRESHOLD` defaults to `5` and must be a non-negative integer. A repository meets the high-stars indicator when its star count is greater than or equal to this threshold.
+`STAR_THRESHOLD` is optional and defaults to `5`. Run the audit with:
+
+```sh
+npx gh-repo-audit
+```
+
+Results are written as formatted JSON to `./data.json` in the current working directory. The token is never printed or included in returned repository objects. The token should have the access needed for the private repositories you want to inspect. A failed repository fetch, README check, analysis, or file write leaves the previous output file unchanged.
+
+`STAR_THRESHOLD` must be a non-negative integer when provided. A repository meets the high-stars indicator when its star count is greater than or equal to this threshold.
 
 ## Classification and sorting
 
